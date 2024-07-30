@@ -2,43 +2,59 @@ pipeline {
     agent any
 
     environment {
-        registryCredentials = "dockerHub"
-        imageName = "mobile_image"
-        dockerImage = ''
+        // Define any environment variables here if needed
+        DOCKER_IMAGE_NAME = 'imagetest'
+        DOCKER_REGISTRY = 'alachebil'
+        DOCKER_CREDENTIALS_ID = 'dockerHub'
     }
 
     stages {
-        stage('Compile') {
+        stage('Checkout') {
             steps {
-               sh 'mvn compile'
+                // Checkout the code from the repository
+                git 'https://github.com/choucheniheb/Pi_Dev_Cloud.git'
             }
         }
 
-        stage('Code Quality') {
+        stage('Build') {
             steps {
-                // Build the project using Maven
-                sh 'echo Sonarqube Code Quality Check-Done'
+                // Build the Java project using Maven
+                sh 'mvn clean install'
             }
         }
 
         stage('Test') {
             steps {
+                // Run tests for the Java project
+                sh 'mvn test'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                // Build the Docker image
                 script {
-                    try {
-                        sh 'mvn clean test'
-                    } catch (Exception e) {
-                        error "Tests failed: ${e.message}"
-                    }
+                    docker.build("${env.DOCKER_IMAGE_NAME}", ".")
                 }
             }
         }
 
-        stage('Package') {
+        stage('Push Docker Image') {
             steps {
+                // Push the Docker image to the registry
                 script {
-                   sh 'mvn package'
+                    docker.withRegistry("${env.DOCKER_REGISTRY}", "${env.DOCKER_CREDENTIALS_ID}") {
+                        docker.image("${env.DOCKER_IMAGE_NAME}").push('latest')
                     }
                 }
             }
         }
     }
+
+    post {
+        always {
+            // Cleanup actions or notifications
+            cleanWs()
+        }
+    }
+}
