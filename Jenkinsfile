@@ -9,18 +9,17 @@ pipeline {
     }
 
     stages {
-       
         stage('Build') {
             steps {
-                // Build the Java project using Maven
-                sh 'mvn clean install'
+                // Build the Java project using Ant
+                sh 'ant clean build-for-ios-device'
             }
         }
 
         stage('Test') {
             steps {
-                // Run tests for the Java project
-                sh 'mvn test'
+                // Run tests for the Java project (if applicable)
+                sh 'ant test'
             }
         }
 
